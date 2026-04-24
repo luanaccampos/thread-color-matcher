@@ -12,7 +12,7 @@
     }
 
     input {
-      width: 80px;
+      width: 100px;
       margin-right: 10px;
     }
 
@@ -45,7 +45,12 @@
 
 <h2>Encontre linhas por cor</h2>
 
-HEX: <input id="hex" type="text" value="#C83232">
+<label>HEX:</label>
+<input id="hex" type="text" value="#C83232">
+
+<label>🎨</label>
+<input type="color" id="colorPicker" value="#C83232">
+
 <button onclick="buscar()">Buscar</button>
 
 <div id="preview" class="preview"></div>
@@ -55,7 +60,7 @@ HEX: <input id="hex" type="text" value="#C83232">
 
 <script>
 
-// SUA BASE (exemplo)
+// ===================== BASE (mantida igual) =====================
 const linhas = [
   {
     "id": "2000",
@@ -771,7 +776,7 @@ const linhas = [
   }
 ];
 
-// HEX → RGB
+// ===================== UTIL =====================
 function hexToRgb(hex) {
   hex = hex.replace("#", "");
 
@@ -788,9 +793,7 @@ function hexToRgb(hex) {
   };
 }
 
-// RGB → LAB
 function rgbToLab(r, g, b) {
-
   r /= 255; g /= 255; b /= 255;
 
   [r, g, b] = [r, g, b].map(v =>
@@ -798,7 +801,7 @@ function rgbToLab(r, g, b) {
   );
 
   let x = (r*0.4124 + g*0.3576 + b*0.1805) / 0.95047;
-  let y = (r*0.2126 + g*0.7152 + b*0.0722) / 1.00000;
+  let y = (r*0.2126 + g*0.7152 + b*0.0722);
   let z = (r*0.0193 + g*0.1192 + b*0.9505) / 1.08883;
 
   [x, y, z] = [x, y, z].map(v =>
@@ -812,14 +815,11 @@ function rgbToLab(r, g, b) {
   };
 }
 
-// CIEDE2000 (igual ao anterior)
 function deltaE(lab1, lab2) {
-
   const L1 = lab1.L, a1 = lab1.a, b1 = lab1.b;
   const L2 = lab2.L, a2 = lab2.a, b2 = lab2.b;
 
   const avgLp = (L1 + L2) / 2;
-
   const C1 = Math.sqrt(a1*a1 + b1*b1);
   const C2 = Math.sqrt(a2*a2 + b2*b2);
   const avgC = (C1 + C2) / 2;
@@ -874,17 +874,41 @@ function deltaE(lab1, lab2) {
   );
 }
 
-// Pré-processamento
+// ===================== PRÉ-CÁLCULO =====================
 linhas.forEach(l => {
   const rgb = hexToRgb(l.hex);
   l.rgb = rgb;
   l.lab = rgbToLab(rgb.r, rgb.g, rgb.b);
 });
 
-// Busca
+// ===================== COLOR PICKER =====================
+const colorPicker = document.getElementById("colorPicker");
+const hexInput = document.getElementById("hex");
+
+colorPicker.addEventListener("input", () => {
+  hexInput.value = colorPicker.value;
+  buscar();
+});
+
+hexInput.addEventListener("input", () => {
+  let val = hexInput.value.trim();
+
+  if (!val.startsWith("#")) val = "#" + val;
+
+  if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+    colorPicker.value = val;
+  }
+});
+
+// ===================== BUSCA =====================
 function buscar() {
 
-  const hex = document.getElementById("hex").value;
+  let hex = hexInput.value.trim();
+
+  if (!hex.startsWith("#")) hex = "#" + hex;
+
+  if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
+
   const rgb = hexToRgb(hex);
   const alvoLab = rgbToLab(rgb.r, rgb.g, rgb.b);
 
@@ -900,7 +924,7 @@ function buscar() {
   mostrar(resultados.slice(0, 10));
 }
 
-// Render
+// ===================== RENDER =====================
 function mostrar(lista) {
 
   const div = document.getElementById("resultados");
@@ -921,6 +945,9 @@ function mostrar(lista) {
     div.appendChild(el);
   });
 }
+
+// Rodar ao abrir
+buscar();
 
 </script>
 
